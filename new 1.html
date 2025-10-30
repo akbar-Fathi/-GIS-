@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🗺️ سیستم GIS خرم‌آباد — اکبر فتحی‌پور</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet Draw -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    * { 
+      box-sizing: border-box; 
+      font-family: 'Tahoma', 'Segoe UI', sans-serif; 
+    }
+    
+    html, body { 
+      height: 100%; 
+      margin: 0; 
+      background: #0f172a; 
+      color: #e6eef8; 
+      overflow: hidden;
+    }
+    
+    .container {
+      display: grid;
+      grid-template-columns: 450px 1fr;
+      grid-template-rows: 70px 1fr 220px;
+      gap: 12px;
+      height: 100vh;
+      padding: 12px;
+    }
+    
+    .header {
+      grid-column: 1 / 3;
+      background: linear-gradient(90deg, #2563eb, #0ea5a9);
+      border-radius: 8px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 6px 18px rgba(2, 6, 23, 0.6);
+      z-index: 1000;
+    }
+    
+    .header h1 { 
+      font-size: 1.2rem; 
+      margin: 0; 
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .header .designer {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+    
+    .header-controls {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .header-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+    
+    .header-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+    
+    .header-btn.active {
+      background: rgba(255, 255, 255, 0.4);
+      box-shadow: 0 0 0 2px white;
+    }
+    
+    .sidebar {
+      background: #0b1220;
+      border-radius: 8px;
+      padding: 14px;
+      overflow: auto;
+      box-shadow: 0 6px 18px rgba(2, 6, 23, 0.6);
+      z-index: 1000;
+    }
+    
+    .panel { 
+      background: #071028; 
+      padding: 12px; 
+      border-radius: 8px; 
+      margin-bottom: 12px; 
+    }
+    
+    .panel h3 {
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #f1f5f9;
+      font-size: 1rem;
+    }
+    
+    .upload-area {
+      border: 2px dashed #f59e0b;
+      border-radius: 10px;
+      padding: 22px;
+      text-align: center;
+      cursor: pointer;
+      color: #f1f5f9;
+      transition: all 0.2s ease;
+    }
+    
+    .upload-area:hover, .upload-area.drag { 
+      background: rgba(245, 158, 11, 0.07); 
+      transform: translateY(-2px);
+    }
+    
+    .btn {
+      background: #2563eb; 
+      color: white; 
+      border: none; 
+      padding: 10px 12px; 
+      border-radius: 8px;
+      cursor: pointer; 
+      width: 100%; 
+      margin-top: 10px; 
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+    
+    .btn:hover {
+      background: #1d4ed8;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+    }
+    
+    .btn-outline { 
+      background: transparent; 
+      border: 1px solid #94a3b8; 
+      color: #e6eef8; 
+    }
+    
+    .btn-outline:hover {
+      background: rgba(148, 163, 184, 0.1);
+      border-color: #cbd5e1;
+    }
+    
+    .btn-danger { 
+      background: #dc2626; 
+    }
+    
+    .btn-danger:hover {
+      background: #b91c1c;
+    }
+    
+    .btn-success {
+      background: #16a34a;
+    }
+    
+    .btn-success:hover {
+      background: #15803d;
+    }
+    
+    .btn-warning {
+      background: #d97706;
+    }
+    
+    .btn-warning:hover {
+      background: #b45309;
+    }
+    
+    .btn-row { 
+      display: flex; 
+      gap: 8px; 
+      margin-top: 10px; 
+    }
+    
+    .btn-row .btn {
+      margin-top: 0;
+    }
+    
+    #map { 
+      width: 100%; 
+      height: 100%; 
+      border-radius: 8px; 
+      overflow: hidden; 
+      box-shadow: 0 6px 18px rgba(2, 6, 23, 0.6);
+    }
+
+    .table-container {
+      grid-column: 1 / 3;
+      background: #071028;
+      border-radius: 8px;
+      padding: 12px;
+      overflow: auto;
+      direction: rtl;
+      box-shadow: 0 6px 18px rgba(2, 6, 23, 0.6);
+      z-index: 1000;
+    }
+    
+    .table-container h3 {
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    table {
+      width: 100%; 
+      border-collapse: collapse; 
+      color: #e6eef8; 
+      font-size: 0.9rem;
+    }
+    
+    th, td { 
+      padding: 8px 10px; 
+      border: 1px solid #0f172a; 
+      text-align: center; 
+    }
+    
+    th { 
+      background: #0ea5a9; 
+      color: #012; 
+      font-weight: 700; 
+    }
+    
+    tr:nth-child(even) { 
+      background: #071a2a; 
+    }
+    
+    tr:hover {
+      background: rgba(37, 99, 235, 0.1);
+    }
+
+    .loading {
+      position: absolute; 
+      inset: 0; 
+      display: none; 
+      align-items: center; 
+      justify-content: center;
+      background: rgba(2, 6, 23, 0.8); 
+      z-index: 9999;
+      border-radius: 8px;
+    }
+    
+    .spinner {
+      width: 60px; 
+      height: 60px; 
+      border-radius: 50%; 
+      border: 5px solid #0f172a; 
+      border-top: 5px solid #f59e0b;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin { 
+      to { 
+        transform: rotate(360deg); 
+      } 
+    }
+
+    /* Footer / signature */
+    .signature {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      background: rgba(2, 6, 23, 0.8);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      display: flex; 
+      gap: 8px; 
+      align-items: center;
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+    }
+
+    /* Mouse coordinates and scale */
+    .map-info {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      background: rgba(2, 6, 23, 0.8);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      min-width: 200px;
+    }
+    
+    .coord-display {
+      font-family: monospace;
+      margin-bottom: 4px;
+    }
+    
+    .scale-display {
+      font-family: monospace;
+      color: #94a3b8;
+    }
+
+    /* Help panel */
+    .help-toggle { 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      cursor: pointer; 
+      user-select: none; 
+      padding: 8px 0;
+      transition: color 0.2s;
+    }
+    
+    .help-toggle:hover {
+      color: #f59e0b;
+    }
+    
+    .help-content { 
+      display: none; 
+      margin-top: 10px; 
+      line-height: 1.6; 
+      font-size: 0.9rem; 
+      color: #cfe7ff; 
+    }
+    
+    .help-open .help-content { 
+      display: block; 
+    }
+
+    /* Popup table small styling */
+    .leaflet-popup-content table { 
+      border-collapse: collapse; 
+      font-size: 0.85rem; 
+      margin: 0;
+    }
+    
+    .leaflet-popup-content td { 
+      padding: 3px 6px; 
+      border: 1px solid #ddd; 
+    }
+    
+    .leaflet-popup-content-wrapper {
+      border-radius: 8px;
+    }
+
+    /* Status message */
+    .status-container {
+      margin-top: 12px;
+      font-size: 0.9rem;
+    }
+    
+    .status-label {
+      font-weight: bold;
+      color: #cfe7ff;
+    }
+    
+    #statusMsg {
+      margin-top: 6px; 
+      padding: 8px;
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 4px;
+      min-height: 20px;
+      color: #f8fafc;
+      font-size: 0.9rem;
+    }
+
+    /* File info */
+    .file-info {
+      margin-top: 10px;
+      padding: 8px;
+      background: rgba(245, 158, 11, 0.1);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    /* Coordinate converter */
+    .coord-converter {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 10px;
+    }
+    
+    .coord-input {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      background: #0b1220;
+      border: 1px solid #334155;
+      border-radius: 4px;
+      color: white;
+      direction: ltr;
+      text-align: center;
+    }
+    
+    .coord-result {
+      margin-top: 8px;
+      padding: 8px;
+      background: rgba(34, 197, 94, 0.1);
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    /* Measurement results */
+    .measurement-result {
+      margin-top: 8px;
+      padding: 8px;
+      background: rgba(59, 130, 246, 0.1);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    /* Label controls */
+    .label-controls {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 10px;
+    }
+    
+    .field-select {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      background: #0b1220;
+      border: 1px solid #334155;
+      border-radius: 4px;
+      color: white;
+      direction: rtl;
+    }
+    
+    .label-preview {
+      margin-top: 8px;
+      padding: 8px;
+      background: rgba(59, 130, 246, 0.1);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      text-align: center;
+      display: none;
+    }
+
+    /* Tool controls */
+    .tool-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    
+    .tool-btn {
+      background: #475569;
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+    
+    .tool-btn:hover {
+      background: #64748b;
+    }
+    
+    .tool-btn.active {
+      background: #2563eb;
+      box-shadow: 0 0 0 2px #3b82f6;
+    }
+
+    /* Fullscreen mode */
+    .fullscreen .container {
+      grid-template-columns: 1fr;
+      grid-template-rows: 70px 1fr;
+      padding: 0;
+      gap: 0;
+    }
+    
+    .fullscreen .header {
+      grid-column: 1;
+      border-radius: 0;
+      margin: 0;
+    }
+    
+    .fullscreen .sidebar {
+      display: none;
+    }
+    
+    .fullscreen .table-container {
+      display: none;
+    }
+    
+    .fullscreen #map {
+      border-radius: 0;
+      grid-column: 1;
+      grid-row: 2;
+    }
+    
+    .fullscreen .signature {
+      bottom: 60px;
+    }
+    
+    .fullscreen .map-info {
+      bottom: 60px;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .container { 
+        grid-template-columns: 1fr; 
+        grid-template-rows: 70px auto 360px 200px; 
+      }
+      
+      .header { 
+        grid-column: 1; 
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
+      }
+      
+      .header-controls {
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      
+      .table-container { 
+        grid-column: 1; 
+      }
+      
+      .signature { 
+        right: auto; 
+        left: 14px; 
+      }
+      
+      .map-info {
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 60px;
+      }
+    }
+    
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #0b1220;
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #2563eb;
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #1d4ed8;
+    }
+    
+    /* Leaflet Draw customization */
+    .leaflet-draw-toolbar {
+      margin-top: 10px;
+    }
+    
+    .leaflet-draw-actions {
+      direction: ltr;
+    }
+    
+    .measurement-label {
+      background: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    /* Persian label styling with transparent background */
+    .persian-label {
+      font-family: 'Tahoma', 'Segoe UI', sans-serif;
+      font-size: 12px;
+      font-weight: bold;
+      text-shadow: 
+        1px 1px 2px rgba(0, 0, 0, 0.8),
+        -1px -1px 2px rgba(0, 0, 0, 0.8),
+        1px -1px 2px rgba(0, 0, 0, 0.8),
+        -1px 1px 2px rgba(0, 0, 0, 0.8);
+      padding: 2px 6px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      direction: rtl;
+      white-space: nowrap;
+      backdrop-filter: blur(2px);
+    }
+    
+    /* Transparent label variants */
+    .transparent-label {
+      background: rgba(255, 255, 255, 0.75) !important;
+      backdrop-filter: blur(3px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+    
+    .semi-transparent-label {
+      background: rgba(255, 255, 255, 0.6) !important;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .clear-label {
+      background: rgba(255, 255, 255, 0.45) !important;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Fix for Persian text in tables */
+    .persian-text {
+      direction: rtl;
+      text-align: right;
+      font-family: 'Tahoma', 'Segoe UI', sans-serif;
+    }
+    
+    /* Fix for popup content */
+    .leaflet-popup-content {
+      direction: rtl;
+      text-align: right;
+      font-family: 'Tahoma', 'Segoe UI', sans-serif;
+    }
+    
+    /* UTF-8 text styling */
+    .utf8-text {
+      font-family: 'Tahoma', 'Segoe UI', 'Arial', sans-serif;
+      unicode-bidi: plaintext;
+    }
+    
+    /* Label transparency controls */
+    .transparency-controls {
+      display: flex;
+      gap: 8px;
+      margin: 8px 0;
+    }
+    
+    .transparency-btn {
+      flex: 1;
+      padding: 6px;
+      border: 1px solid #334155;
+      background: #0b1220;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+    
+    .transparency-btn:hover {
+      background: #1e293b;
+    }
+    
+    .transparency-btn.active {
+      background: #2563eb;
+      border-color: #3b82f6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1><i class="fas fa-map-marked-alt"></i> سیستم GIS خرم‌آباد</h1>
+      <div class="designer">استان لرستان — طراحی شده توسط <strong>اکبر فتحی‌پور</strong></div>
+      <div class="header-controls">
+        <button class="header-btn" id="fullscreenBtn" title="نمایش تمام صفحه">
+          <i class="fas fa-expand"></i>
+          <span>تمام صفحه</span>
+        </button>
+        <button class="header-btn" id="measureBtn" title="ابزار اندازه‌گیری">
+          <i class="fas fa-ruler"></i>
+          <span>اندازه‌گیری</span>
+        </button>
+        <button class="header-btn" id="drawBtn" title="ابزار ترسیم">
+          <i class="fas fa-draw-polygon"></i>
+          <span>ترسیم</span>
+        </button>
+        <button class="header-btn" id="labelBtn" title="لیبل‌گذاری">
+          <i class="fas fa-tag"></i>
+          <span>لیبل‌گذاری</span>
+        </button>
+        <button class="header-btn" id="coordBtn" title="تبدیل مختصات">
+          <i class="fas fa-crosshairs"></i>
+          <span>تبدیل مختصات</span>
+        </button>
+        <button class="header-btn" id="resetViewBtn" title="بازنشانی نمای نقشه">
+          <i class="fas fa-home"></i>
+          <span>مرکز نقشه</span>
+        </button>
+      </div>
+    </header>
+
+    <aside class="sidebar">
+      <div class="panel">
+        <h3><i class="fas fa-upload"></i> بارگذاری Shapefile</h3>
+        <div id="dropZone" class="upload-area" title="کلیک یا کشیدن و رها کردن فایل‌ها">
+          <div style="font-size: 2.6rem; color: #f59e0b;">
+            <i class="fas fa-cloud-upload-alt"></i>
+          </div>
+          <div style="font-size: 1rem; font-weight: 700;">فایل را اینجا رها کنید</div>
+          <div style="font-size: 0.9rem; color: #94a3b8; margin-top: 6px;">یا برای انتخاب کلیک کنید — فرمت: ZIP یا (SHP, SHX, DBF, PRJ)</div>
+        </div>
+
+        <input id="fileInput" type="file" accept=".zip,.shp,.shx,.dbf,.prj" multiple style="display: none;">
+        
+        <div id="fileInfo" class="file-info">
+          <i class="fas fa-info-circle"></i> <span id="fileInfoText"></span>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn" id="processBtn">
+            <i class="fas fa-bolt"></i> پردازش و نمایش
+          </button>
+          <button class="btn btn-outline" id="clearBtn">
+            <i class="fas fa-broom"></i> پاک‌سازی
+          </button>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-success" id="exportBtn">
+            <i class="fas fa-download"></i> دانلود خروجی
+          </button>
+          <button class="btn btn-warning" id="exportDrawingBtn">
+            <i class="fas fa-save"></i> ذخیره ترسیم
+          </button>
+        </div>
+
+        <div class="status-container">
+          <span class="status-label">وضعیت:</span>
+          <div id="statusMsg">آماده برای بارگذاری</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3><i class="fas fa-layer-group"></i> لایه‌های پایه</h3>
+        <p style="color: #cfe7ff; margin: 6px 0 8px 0; font-size: 0.9rem;">با امکان سویچ بین نقشه‌های پایه</p>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button class="btn btn-outline" id="osmBtn">
+            <i class="fas fa-map"></i> OpenStreetMap
+          </button>
+          <button class="btn btn-outline" id="googleSatBtn">
+            <i class="fas fa-satellite"></i> Google Satellite
+          </button>
+          <button class="btn btn-outline" id="topoBtn">
+            <i class="fas fa-mountain"></i> توپوگرافی
+          </button>
+          <button class="btn btn-outline" id="cartoBtn">
+            <i class="fas fa-palette"></i> CartoDB Voyager
+          </button>
+        </div>
+      </div>
+
+      <div class="panel" id="measurementPanel" style="display: none;">
+        <h3><i class="fas fa-ruler"></i> ابزار اندازه‌گیری</h3>
+        <div class="tool-controls">
+          <button class="tool-btn" id="measureLengthBtn">
+            <i class="fas fa-ruler-horizontal"></i> اندازه‌گیری طول
+          </button>
+          <button class="tool-btn" id="measureAreaBtn">
+            <i class="fas fa-vector-square"></i> اندازه‌گیری مساحت
+          </button>
+          <button class="tool-btn" id="clearMeasurementsBtn">
+            <i class="fas fa-trash"></i> پاک‌سازی اندازه‌گیری‌ها
+          </button>
+        </div>
+        <div id="measurementResult" class="measurement-result"></div>
+      </div>
+
+      <div class="panel" id="drawingPanel" style="display: none;">
+        <h3><i class="fas fa-draw-polygon"></i> ابزار ترسیم</h3>
+        <div class="tool-controls">
+          <button class="tool-btn" id="drawMarkerBtn">
+            <i class="fas fa-map-marker-alt"></i> نقطه
+          </button>
+          <button class="tool-btn" id="drawPolylineBtn">
+            <i class="fas fa-draw-polygon"></i> خط
+          </button>
+          <button class="tool-btn" id="drawPolygonBtn">
+            <i class="fas fa-square"></i> چندضلعی
+          </button>
+          <button class="tool-btn" id="drawRectangleBtn">
+            <i class="fas fa-vector-square"></i> مستطیل
+          </button>
+          <button class="tool-btn" id="drawCircleBtn">
+            <i class="fas fa-circle"></i> دایره
+          </button>
+          <button class="tool-btn" id="clearDrawingsBtn">
+            <i class="fas fa-trash"></i> پاک‌سازی ترسیم‌ها
+          </button>
+        </div>
+      </div>
+
+      <div class="panel" id="labelPanel" style="display: none;">
+        <h3><i class="fas fa-tag"></i> لیبل‌گذاری</h3>
+        <div class="label-controls">
+          <div style="margin-bottom: 8px; font-size: 0.9rem;">انتخاب فیلد برای لیبل‌گذاری:</div>
+          <select id="labelFieldSelect" class="field-select">
+            <option value="">-- انتخاب فیلد --</option>
+          </select>
+          
+          <div style="margin: 10px 0; font-size: 0.9rem;">شفافیت لیبل:</div>
+          <div class="transparency-controls">
+            <button class="transparency-btn active" data-transparency="transparent">شفاف</button>
+            <button class="transparency-btn" data-transparency="semi-transparent">نیمه شفاف</button>
+            <button class="transparency-btn" data-transparency="clear">کاملاً شفاف</button>
+          </div>
+          
+          <div style="margin: 10px 0; font-size: 0.9rem;">تنظیمات لیبل:</div>
+          
+          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <select id="labelFontSize" class="field-select" style="flex: 1;">
+              <option value="10">سایز ۱۰</option>
+              <option value="12" selected>سایز ۱۲</option>
+              <option value="14">سایز ۱۴</option>
+              <option value="16">سایز ۱۶</option>
+              <option value="18">سایز ۱۸</option>
+            </select>
+            
+            <select id="labelColor" class="field-select" style="flex: 1;">
+              <option value="#000000" style="color: black;">مشکی</option>
+              <option value="#dc2626" style="color: #dc2626;">قرمز</option>
+              <option value="#2563eb" style="color: #2563eb;">آبی</option>
+              <option value="#16a34a" style="color: #16a34a;">سبز</option>
+              <option value="#d97706" style="color: #d97706;">نارنجی</option>
+              <option value="#7c3aed" style="color: #7c3aed;">بنفش</option>
+              <option value="#ffffff" style="color: white; background: #666;">سفید</option>
+            </select>
+          </div>
+          
+          <div class="btn-row">
+            <button class="btn btn-success" id="applyLabelsBtn">
+              <i class="fas fa-tag"></i> اعمال لیبل‌ها
+            </button>
+            <button class="btn btn-outline" id="clearLabelsBtn">
+              <i class="fas fa-eye-slash"></i> حذف لیبل‌ها
+            </button>
+          </div>
+          
+          <div id="labelPreview" class="label-preview">
+            پیش‌نمایش لیبل
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="coordinatePanel" style="display: none;">
+        <h3><i class="fas fa-crosshairs"></i> تبدیل مختصات</h3>
+        <div class="coord-converter">
+          <div style="margin-bottom: 8px; font-size: 0.9rem;">مختصات جغرافیایی (Lat, Lon):</div>
+          <input type="text" id="latInput" class="coord-input" placeholder="عرض جغرافیایی (مثال: 33.4871)">
+          <input type="text" id="lonInput" class="coord-input" placeholder="طول جغرافیایی (مثال: 48.3538)">
+          <button class="btn btn-outline" id="convertToUTMBtn" style="margin-top: 8px;">
+            <i class="fas fa-sync-alt"></i> تبدیل به UTM
+          </button>
+          <div id="utmResult" class="coord-result"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="help-toggle" id="helpToggle">
+          <i class="fas fa-question-circle"></i>
+          <b>راهنما (کلیک کنید)</b>
+        </div>
+        <div class="help-content" id="helpContent">
+          <h4><i class="fas fa-life-ring"></i> راهنمای کامل — گام‌به‌گام</h4>
+          <ol>
+            <li><strong>بارگذاری فایل:</strong> فایل ZIP حاوی SHP/SHX/DBF/PRJ را بارگذاری کنید</li>
+            <li><strong>اندازه‌گیری:</strong> از ابزارهای اندازه‌گیری طول و مساحت استفاده کنید</li>
+            <li><strong>ترسیم:</strong> اشکال مختلف را روی نقشه ترسیم و ذخیره کنید</li>
+            <li><strong>لیبل‌گذاری:</strong> با انتخاب فیلد، لیبل فارسی با پشتیبانی UTF-8 نمایش دهید</li>
+            <li><strong>شفافیت:</strong> از دکمه‌های شفافیت برای تنظیم ظاهر لیبل‌ها استفاده کنید</li>
+            <li><strong>تبدیل مختصات:</strong> مختصات جغرافیایی را به UTM تبدیل کنید</li>
+            <li><strong>خروجی:</strong> داده‌ها و ترسیم‌ها را در قالب Shapefile دریافت کنید</li>
+          </ol>
+        </div>
+      </div>
+    </aside>
+
+    <main style="position: relative;">
+      <div id="map"></div>
+      <div class="loading" id="loadingOverlay">
+        <div class="spinner"></div>
+      </div>
+
+      <div class="signature" aria-hidden="true">
+        <div style="width: 22px; height: 22px; border-radius: 6px; background: #2563eb; display: flex; align-items: center; justify-content: center;">
+          <i class="fas fa-code" style="color: white; font-size: 12px;"></i>
+        </div>
+        <div style="font-size: 0.95rem;">طراحی: <strong>اکبر فتحی‌پور</strong></div>
+      </div>
+
+      <div class="map-info">
+        <div class="coord-display" id="mouseCoords">مختصات: —</div>
+        <div class="scale-display" id="mapScale">مقیاس: —</div>
+      </div>
+    </main>
+
+    <section class="table-container">
+      <h3><i class="fas fa-table"></i> جدول ویژگی‌ها</h3>
+      <div id="attributes">هیچ داده‌ای نمایش داده نمی‌شود. لطفاً یک فایل Shapefile بارگذاری کنید.</div>
+    </section>
+  </div>
+
+  <!-- کتابخانه‌ها -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+  <script src="https://unpkg.com/shpjs@latest/dist/shp.min.js"></script>
+  <script src="https://unpkg.com/shp-write@1.3.0/dist/shpwrite.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
+
+  <script>
+    // ====== تنظیمات اولیه نقشه ======
+    const KHORRAMABAD = [33.4871, 48.3538];
+    let map, geoLayer = null, lastGeoJSON = null;
+    let baseLayers = {}, baseLayerControl;
+    let isFullscreen = false;
+    let drawControl, measureControl;
+    let drawnItems = new L.FeatureGroup();
+    let measureItems = new L.FeatureGroup();
+    let labelLayer = new L.FeatureGroup();
+    let currentLabels = [];
+    let currentTransparency = 'transparent';
+
+    // تعریف سیستم مختصات UTM برای منطقه خرم‌آباد (UTM Zone 39N)
+    proj4.defs("EPSG:32639", "+proj=utm +zone=39 +ellps=WGS84 +datum=WGS84 +units=m +no_defs");
+
+    function initMap() {
+      map = L.map('map').setView(KHORRAMABAD, 12);
+
+      // تعاریف لایه‌های پایه
+      const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      });
+
+      const carto = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CartoDB'
+      });
+
+      const googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+        attribution: '&copy; Google'
+      });
+
+      // لایه توپوگرافی
+      const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenTopoMap',
+        maxZoom: 17
+      });
+
+      baseLayers = {
+        "OpenStreetMap — خیابان": osm,
+        "Google Satellite — ماهواره‌ای گوگل": googleSat,
+        "توپوگرافی — OpenTopoMap": topo,
+        "CartoDB Voyager — ملایم": carto
+      };
+
+      // اضافه کردن لایه توپوگرافی به عنوان پیش‌فرض
+      topo.addTo(map);
+
+      // کنترل لایه‌ها
+      baseLayerControl = L.control.layers(baseLayers, null, { position: 'topright' }).addTo(map);
+
+      // اضافه کردن لایه ترسیم‌ها و لیبل‌ها به نقشه
+      drawnItems.addTo(map);
+      measureItems.addTo(map);
+      labelLayer.addTo(map);
+
+      // نشانگر مرکز
+      L.marker(KHORRAMABAD).addTo(map)
+        .bindPopup('<div style="text-align: center;"><strong>خرم‌آباد</strong><br>مرکز استان لرستان</div>')
+        .openPopup();
+
+      // راه‌اندازی کنترل‌های ترسیم
+      initDrawControls();
+      initMeasureControls();
+
+      // راه‌اندازی نمایش مختصات و مقیاس
+      initMapInfo();
+
+      setupUpload();
+      setupButtons();
+      setupFullscreen();
+      setupLabelControls();
+    }
+
+    // ====== تنظیمات کنترل‌های لیبل‌گذاری ======
+    function setupLabelControls() {
+      const fieldSelect = document.getElementById('labelFieldSelect');
+      const fontSizeSelect = document.getElementById('labelFontSize');
+      const colorSelect = document.getElementById('labelColor');
+      const preview = document.getElementById('labelPreview');
+      const transparencyBtns = document.querySelectorAll('.transparency-btn');
+
+      // مدیریت دکمه‌های شفافیت
+      transparencyBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          transparencyBtns.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          currentTransparency = this.getAttribute('data-transparency');
+          updatePreview();
+        });
+      });
+
+      // بروزرسانی پیش‌نمایش لیبل
+      function updatePreview() {
+        const fontSize = fontSizeSelect.value;
+        const color = colorSelect.value;
+        const sampleText = "نمونه متن فارسی UTF-8";
+        
+        preview.innerHTML = sampleText;
+        preview.style.fontSize = fontSize + 'px';
+        preview.style.color = color;
+        preview.style.fontWeight = 'bold';
+        preview.style.display = 'block';
+        preview.className = `label-preview persian-text utf8-text ${currentTransparency}-label`;
+        
+        // اعمال شفافیت بر اساس انتخاب کاربر
+        switch(currentTransparency) {
+          case 'transparent':
+            preview.style.background = 'rgba(255, 255, 255, 0.85)';
+            preview.style.backdropFilter = 'blur(2px)';
+            break;
+          case 'semi-transparent':
+            preview.style.background = 'rgba(255, 255, 255, 0.6)';
+            preview.style.backdropFilter = 'blur(4px)';
+            break;
+          case 'clear':
+            preview.style.background = 'rgba(255, 255, 255, 0.45)';
+            preview.style.backdropFilter = 'blur(5px)';
+            break;
+        }
+      }
+
+      fontSizeSelect.addEventListener('change', updatePreview);
+      colorSelect.addEventListener('change', updatePreview);
+      
+      // مقدار اولیه پیش‌نمایش
+      updatePreview();
+    }
+
+    // ====== لیبل‌گذاری خودکار ======
+    function applyLabels() {
+      const fieldSelect = document.getElementById('labelFieldSelect');
+      const selectedField = fieldSelect.value;
+      const fontSize = document.getElementById('labelFontSize').value;
+      const color = document.getElementById('labelColor').value;
+
+      if (!selectedField) {
+        alert('لطفاً یک فیلد برای لیبل‌گذاری انتخاب کنید.');
+        return;
+      }
+
+      if (!lastGeoJSON) {
+        alert('هیچ داده‌ای برای لیبل‌گذاری موجود نیست.');
+        return;
+      }
+
+      // حذف لیبل‌های قبلی
+      clearLabels();
+
+      document.getElementById('statusMsg').innerText = 'در حال اعمال لیبل‌ها...';
+
+      let labelCount = 0;
+
+      lastGeoJSON.features.forEach((feature, index) => {
+        if (feature.properties && feature.properties[selectedField]) {
+          let labelText = feature.properties[selectedField];
+          
+          // تبدیل به رشته برای اطمینان و استفاده از UTF-8
+          labelText = String(labelText);
+          
+          // استفاده از TextDecoder برای decode کردن UTF-8
+          labelText = decodeUTF8Text(labelText);
+          
+          // تشخیص خودکار متن فارسی
+          const isPersian = isPersianText(labelText);
+          
+          if (labelText && labelText !== '' && labelText !== 'null' && labelText !== 'undefined') {
+            let latlng;
+            
+            // پیدا کردن موقعیت برای لیبل بر اساس نوع هندسه
+            if (feature.geometry.type === 'Point') {
+              latlng = L.latLng(feature.geometry.coordinates[1], feature.geometry.coordinates[0]);
+            } else if (feature.geometry.type === 'Polygon') {
+              // مرکز چندضلعی
+              const coords = feature.geometry.coordinates[0];
+              const center = getPolygonCenter(coords);
+              latlng = L.latLng(center.lat, center.lng);
+            } else if (feature.geometry.type === 'LineString') {
+              // نقطه میانی خط
+              const coords = feature.geometry.coordinates;
+              const midIndex = Math.floor(coords.length / 2);
+              latlng = L.latLng(coords[midIndex][1], coords[midIndex][0]);
+            } else if (feature.geometry.type === 'MultiPolygon') {
+              // اولین چندضلعی در MultiPolygon
+              const coords = feature.geometry.coordinates[0][0];
+              const center = getPolygonCenter(coords);
+              latlng = L.latLng(center.lat, center.lng);
+            } else {
+              return; // نوع هندسه پشتیبانی نمی‌شود
+            }
+
+            // تنظیم شفافیت بر اساس انتخاب کاربر
+            let transparencyClass = '';
+            let backgroundStyle = '';
+            
+            switch(currentTransparency) {
+              case 'transparent':
+                transparencyClass = 'transparent-label';
+                backgroundStyle = 'rgba(255, 255, 255, 0.85)';
+                break;
+              case 'semi-transparent':
+                transparencyClass = 'semi-transparent-label';
+                backgroundStyle = 'rgba(255, 255, 255, 0.6)';
+                break;
+              case 'clear':
+                transparencyClass = 'clear-label';
+                backgroundStyle = 'rgba(255, 255, 255, 0.45)';
+                break;
+            }
+
+            // ایجاد لیبل با پشتیبانی UTF-8 و شفافیت
+            const label = L.marker(latlng, {
+              icon: L.divIcon({
+                className: `persian-label utf8-text ${transparencyClass}`,
+                html: `<div style="font-size: ${fontSize}px; color: ${color}; font-weight: bold; 
+                       text-shadow: 1px 1px 2px rgba(0,0,0,0.8), -1px -1px 2px rgba(0,0,0,0.8), 
+                       1px -1px 2px rgba(0,0,0,0.8), -1px 1px 2px rgba(0,0,0,0.8);
+                       background: ${backgroundStyle}; 
+                       backdrop-filter: blur(3px);
+                       padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); 
+                       direction: ${isPersian ? 'rtl' : 'ltr'}; 
+                       font-family: Tahoma, Segoe UI, Arial, sans-serif; 
+                       white-space: nowrap; unicode-bidi: plaintext;">${labelText}</div>`,
+                iconSize: [null, null],
+                iconAnchor: [0, 0]
+              })
+            });
+
+            label.addTo(labelLayer);
+            currentLabels.push(label);
+            labelCount++;
+          }
+        }
+      });
+
+      document.getElementById('statusMsg').innerText = `${labelCount} لیبل با پشتیبانی UTF-8 اعمال شد.`;
+    }
+
+    // ====== decode کردن متن UTF-8 ======
+    function decodeUTF8Text(text) {
+      if (typeof text !== 'string') return text;
+      
+      try {
+        // اگر متن حاوی کاراکترهای UTF-8 encoded باشد
+        if (text.includes('\\u')) {
+          return JSON.parse(`"${text}"`);
+        }
+        
+        // استفاده از TextDecoder برای decode کردن
+        if (typeof TextDecoder !== 'undefined') {
+          const encoder = new TextEncoder();
+          const decoder = new TextDecoder('utf-8');
+          const encoded = encoder.encode(text);
+          return decoder.decode(encoded);
+        }
+        
+        return text;
+      } catch (e) {
+        console.warn('خطا در decode کردن UTF-8:', e);
+        return text;
+      }
+    }
+
+    // ====== تشخیص متن فارسی ======
+    function isPersianText(text) {
+      if (!text) return false;
+      
+      const persianRegex = /[\u0600-\u06FF\uFB8A\u067E\u0686\u06AF\u200C\u200F]/;
+      const englishRegex = /[a-zA-Z]/;
+      
+      let persianCount = 0;
+      let englishCount = 0;
+      
+      const textStr = String(text);
+      
+      for (let i = 0; i < textStr.length; i++) {
+        const char = textStr.charAt(i);
+        if (persianRegex.test(char)) persianCount++;
+        if (englishRegex.test(char)) englishCount++;
+      }
+      
+      return persianCount > englishCount;
+    }
+
+    // ====== محاسبه مرکز چندضلعی ======
+    function getPolygonCenter(coords) {
+      let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+      
+      coords.forEach(coord => {
+        const lng = coord[0];
+        const lat = coord[1];
+        
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+      });
+      
+      return {
+        lat: (minLat + maxLat) / 2,
+        lng: (minLng + maxLng) / 2
+      };
+    }
+
+    // ====== حذف لیبل‌ها ======
+    function clearLabels() {
+      currentLabels.forEach(label => {
+        labelLayer.removeLayer(label);
+      });
+      currentLabels = [];
+      document.getElementById('statusMsg').innerText = 'لیبل‌ها حذف شدند.';
+    }
+
+    // ====== پر کردن لیست فیلدها برای لیبل‌گذاری ======
+    function populateLabelFields(geojson) {
+      const fieldSelect = document.getElementById('labelFieldSelect');
+      fieldSelect.innerHTML = '<option value="">-- انتخاب فیلد --</option>';
+      
+      if (geojson.features && geojson.features.length > 0) {
+        const fields = Object.keys(geojson.features[0].properties || {});
+        
+        // اولویت‌بندی فیلدها بر اساس محتوای فارسی
+        const prioritizedFields = [];
+        const otherFields = [];
+        
+        fields.forEach(field => {
+          // نمونه‌گیری از مقادیر برای تشخیص فارسی
+          let hasPersianContent = false;
+          for (let i = 0; i < Math.min(5, geojson.features.length); i++) {
+            const value = geojson.features[i].properties[field];
+            if (value && isPersianText(value)) {
+              hasPersianContent = true;
+              break;
+            }
+          }
+          
+          if (hasPersianContent || isPersianText(field)) {
+            prioritizedFields.push(field);
+          } else {
+            otherFields.push(field);
+          }
+        });
+        
+        // اضافه کردن فیلدهای با محتوای فارسی اول
+        prioritizedFields.forEach(field => {
+          const option = document.createElement('option');
+          option.value = field;
+          option.textContent = decodeUTF8Text(field);
+          option.className = 'persian-text utf8-text';
+          option.style.fontFamily = 'Tahoma, sans-serif';
+          option.style.direction = 'rtl';
+          option.style.unicodeBidi = 'plaintext';
+          fieldSelect.appendChild(option);
+        });
+        
+        // اضافه کردن سایر فیلدها
+        otherFields.forEach(field => {
+          const option = document.createElement('option');
+          option.value = field;
+          option.textContent = decodeUTF8Text(field);
+          option.className = 'utf8-text';
+          fieldSelect.appendChild(option);
+        });
+        
+        // اگر فیلدی با نام‌های متداول فارسی وجود دارد، به طور خودکار انتخاب شود
+        const persianFieldNames = ['name', 'نام', 'title', 'عنوان', 'address', 'آدرس', 'city', 'شهر', 'description', 'توضیحات'];
+        for (let fieldName of persianFieldNames) {
+          if (fields.includes(fieldName)) {
+            fieldSelect.value = fieldName;
+            break;
+          }
+        }
+        
+        // اگر فیلد اولویت‌دار وجود دارد، آن را انتخاب کن
+        if (prioritizedFields.length > 0 && !fieldSelect.value) {
+          fieldSelect.value = prioritizedFields[0];
+        }
+      }
+    }
+
+    // ====== نمایش مختصات و مقیاس ======
+    function initMapInfo() {
+      // نمایش مختصات موس
+      map.on('mousemove', function(e) {
+        const coords = e.latlng;
+        const lat = coords.lat.toFixed(6);
+        const lng = coords.lng.toFixed(6);
+        
+        // تبدیل به UTM
+        try {
+          const utm = convertToUTM(lat, lng);
+          document.getElementById('mouseCoords').innerHTML = 
+            `مختصات: ${lat}, ${lng}<br>UTM: ${utm.easting}, ${utm.northing} (${utm.zone})`;
+        } catch (e) {
+          document.getElementById('mouseCoords').innerHTML = 
+            `مختصات: ${lat}, ${lng}`;
+        }
+      });
+
+      // نمایش مقیاس
+      function updateScale() {
+        const zoom = map.getZoom();
+        const scale = calculateScale(zoom);
+        document.getElementById('mapScale').textContent = `مقیاس: 1:${scale.toLocaleString('fa-IR')}`;
+      }
+
+      map.on('zoomend', updateScale);
+      map.on('moveend', updateScale);
+      updateScale(); // مقدار اولیه
+    }
+
+    function calculateScale(zoom) {
+      // محاسبه تقریبی مقیاس بر اساس zoom level
+      const scaleFactors = {
+        1: 500000000,
+        2: 200000000,
+        3: 100000000,
+        4: 50000000,
+        5: 25000000,
+        6: 12500000,
+        7: 6500000,
+        8: 3000000,
+        9: 1500000,
+        10: 750000,
+        11: 400000,
+        12: 200000,
+        13: 100000,
+        14: 50000,
+        15: 25000,
+        16: 12500,
+        17: 5000,
+        18: 2500,
+        19: 1000,
+        20: 500
+      };
+      
+      return scaleFactors[zoom] || 1000;
+    }
+
+    // ====== کنترل‌های ترسیم ======
+    function initDrawControls() {
+      drawControl = new L.Control.Draw({
+        position: 'topright',
+        draw: {
+          polygon: {
+            allowIntersection: false,
+            drawError: {
+              color: '#e1e4e8',
+              message: '<strong>خطا:</strong> شکل مجاز نیست!'
+            },
+            shapeOptions: {
+              color: '#2563eb'
+            },
+            showArea: true
+          },
+          polyline: {
+            shapeOptions: {
+              color: '#2563eb'
+            }
+          },
+          rectangle: {
+            shapeOptions: {
+              color: '#2563eb'
+            }
+          },
+          circle: {
+            shapeOptions: {
+              color: '#2563eb'
+            }
+          },
+          marker: {
+            icon: new L.Icon.Default()
+          }
+        },
+        edit: {
+          featureGroup: drawnItems
+        }
+      });
+
+      map.on(L.Draw.Event.CREATED, function (e) {
+        const type = e.layerType;
+        const layer = e.layer;
+
+        if (type === 'marker') {
+          layer.bindPopup('نقطه ترسیم شده');
+        }
+
+        drawnItems.addLayer(layer);
+        document.getElementById('statusMsg').innerText = `شکل ${type} ترسیم شد.`;
+      });
+    }
+
+    // ====== کنترل‌های اندازه‌گیری ======
+    function initMeasureControls() {
+      map.on(L.Draw.Event.CREATED, function (e) {
+        const layer = e.layer;
+        let measureText = '';
+
+        if (e.layerType === 'polyline') {
+          const length = calculateLength(layer);
+          measureText = `طول: ${length}`;
+          layer.bindPopup(measureText);
+        } else if (e.layerType === 'polygon') {
+          const area = calculateArea(layer);
+          measureText = `مساحت: ${area}`;
+          layer.bindPopup(measureText);
+        }
+
+        measureItems.addLayer(layer);
+        document.getElementById('measurementResult').innerHTML = measureText;
+        document.getElementById('measurementResult').style.display = 'block';
+        document.getElementById('statusMsg').innerText = measureText;
+      });
+    }
+
+    function calculateLength(layer) {
+      const latlngs = layer.getLatLngs();
+      let total = 0;
+      
+      for (let i = 0; i < latlngs.length - 1; i++) {
+        total += latlngs[i].distanceTo(latlngs[i + 1]);
+      }
+      
+      if (total < 1000) {
+        return `${total.toFixed(2)} متر`;
+      } else {
+        return `${(total / 1000).toFixed(2)} کیلومتر`;
+      }
+    }
+
+    function calculateArea(layer) {
+      const area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+      
+      if (area < 1000000) {
+        return `${(area / 10000).toFixed(2)} هکتار`;
+      } else {
+        return `${(area / 1000000).toFixed(2)} کیلومتر مربع`;
+      }
+    }
+
+    // ====== تبدیل مختصات ======
+    function convertToUTM(lat, lon) {
+      try {
+        const source = 'EPSG:4326'; // WGS84
+        const target = 'EPSG:32639'; // UTM Zone 39N
+        
+        const result = proj4(source, target, [parseFloat(lon), parseFloat(lat)]);
+        
+        return {
+          easting: result[0].toFixed(2),
+          northing: result[1].toFixed(2),
+          zone: '39N'
+        };
+      } catch (error) {
+        throw new Error('خطا در تبدیل مختصات: ' + error.message);
+      }
+    }
+
+    // ====== مدیریت Upload و Drag & Drop ======
+    function setupUpload() {
+      const dropZone = document.getElementById('dropZone');
+      const fileInput = document.getElementById('fileInput');
+      const fileInfo = document.getElementById('fileInfo');
+      const fileInfoText = document.getElementById('fileInfoText');
+
+      dropZone.addEventListener('click', () => fileInput.click());
+
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault(); 
+        dropZone.classList.add('drag');
+      });
+      
+      dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault(); 
+        dropZone.classList.remove('drag');
+      });
+      
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault(); 
+        dropZone.classList.remove('drag');
+        const dt = e.dataTransfer;
+        if (dt && dt.files && dt.files.length > 0) {
+          fileInput.files = dt.files;
+          updateFileInfo(fileInput.files);
+        }
+      });
+
+      fileInput.addEventListener('change', () => {
+        updateFileInfo(fileInput.files);
+      });
+      
+      function updateFileInfo(files) {
+        if (files.length === 0) {
+          fileInfo.style.display = 'none';
+          return;
+        }
+        
+        let fileNames = [];
+        let hasShp = false, hasShx = false, hasDbf = false, hasPrj = false;
+        
+        for (let file of files) {
+          fileNames.push(file.name);
+          const ext = file.name.toLowerCase().split('.').pop();
+          if (ext === 'shp') hasShp = true;
+          if (ext === 'shx') hasShx = true;
+          if (ext === 'dbf') hasDbf = true;
+          if (ext === 'prj') hasPrj = true;
+        }
+        
+        fileInfoText.innerHTML = `<strong>${files.length} فایل انتخاب شد:</strong> ${fileNames.join(', ')}`;
+        
+        if (files.length === 1 && files[0].name.toLowerCase().endsWith('.zip')) {
+          fileInfoText.innerHTML += '<br><span style="color:#4ade80;">✓ فایل ZIP شناسایی شد</span>';
+        } else {
+          let status = [];
+          if (hasShp) status.push('SHP ✓');
+          if (hasShx) status.push('SHX ✓');
+          if (hasDbf) status.push('DBF ✓');
+          if (hasPrj) status.push('PRJ ✓');
+          
+          if (status.length > 0) {
+            fileInfoText.innerHTML += `<br><span style="color:#4ade80;">${status.join(', ')}</span>`;
+          }
+          
+          if (!hasShp || !hasShx || !hasDbf) {
+            fileInfoText.innerHTML += '<br><span style="color:#f59e0b;">⚠ فایل‌های ضروری (SHP, SHX, DBF) باید موجود باشند</span>';
+          }
+        }
+        
+        fileInfo.style.display = 'block';
+        document.getElementById('statusMsg').innerText = `${files.length} فایل انتخاب شد. آماده پردازش.`;
+      }
+    }
+
+    // ====== دکمه‌ها و اکشن‌ها ======
+    function setupButtons() {
+      // دکمه‌های اصلی
+      document.getElementById('processBtn').addEventListener('click', processShapefile);
+      document.getElementById('clearBtn').addEventListener('click', clearMap);
+      document.getElementById('exportBtn').addEventListener('click', exportShapefile);
+      document.getElementById('exportDrawingBtn').addEventListener('click', exportDrawing);
+
+      // دکمه‌های لایه‌های پایه
+      document.getElementById('osmBtn').addEventListener('click', () => switchBase('OpenStreetMap — خیابان'));
+      document.getElementById('googleSatBtn').addEventListener('click', () => switchBase('Google Satellite — ماهواره‌ای گوگل'));
+      document.getElementById('topoBtn').addEventListener('click', () => switchBase('توپوگرافی — OpenTopoMap'));
+      document.getElementById('cartoBtn').addEventListener('click', () => switchBase('CartoDB Voyager — ملایم'));
+
+      // دکمه‌های ابزارها
+      document.getElementById('measureBtn').addEventListener('click', toggleMeasurement);
+      document.getElementById('drawBtn').addEventListener('click', toggleDrawing);
+      document.getElementById('labelBtn').addEventListener('click', toggleLabel);
+      document.getElementById('coordBtn').addEventListener('click', toggleCoordinate);
+      document.getElementById('resetViewBtn').addEventListener('click', resetView);
+
+      // دکمه‌های اندازه‌گیری
+      document.getElementById('measureLengthBtn').addEventListener('click', startLengthMeasurement);
+      document.getElementById('measureAreaBtn').addEventListener('click', startAreaMeasurement);
+      document.getElementById('clearMeasurementsBtn').addEventListener('click', clearMeasurements);
+
+      // دکمه‌های ترسیم
+      document.getElementById('drawMarkerBtn').addEventListener('click', () => startDrawing('marker'));
+      document.getElementById('drawPolylineBtn').addEventListener('click', () => startDrawing('polyline'));
+      document.getElementById('drawPolygonBtn').addEventListener('click', () => startDrawing('polygon'));
+      document.getElementById('drawRectangleBtn').addEventListener('click', () => startDrawing('rectangle'));
+      document.getElementById('drawCircleBtn').addEventListener('click', () => startDrawing('circle'));
+      document.getElementById('clearDrawingsBtn').addEventListener('click', clearDrawings);
+
+      // دکمه‌های لیبل‌گذاری
+      document.getElementById('applyLabelsBtn').addEventListener('click', applyLabels);
+      document.getElementById('clearLabelsBtn').addEventListener('click', clearLabels);
+
+      // تبدیل مختصات
+      document.getElementById('convertToUTMBtn').addEventListener('click', convertCoordinates);
+
+      // راهنما
+      document.getElementById('helpToggle').addEventListener('click', () => {
+        document.getElementById('helpToggle').parentElement.classList.toggle('help-open');
+      });
+    }
+
+    function toggleMeasurement() {
+      const panel = document.getElementById('measurementPanel');
+      const btn = document.getElementById('measureBtn');
+      
+      if (panel.style.display === 'block') {
+        panel.style.display = 'none';
+        btn.classList.remove('active');
+        document.getElementById('measurementResult').style.display = 'none';
+      } else {
+        // مخفی کردن پنل‌های دیگر
+        document.getElementById('drawingPanel').style.display = 'none';
+        document.getElementById('labelPanel').style.display = 'none';
+        document.getElementById('coordinatePanel').style.display = 'none';
+        document.getElementById('drawBtn').classList.remove('active');
+        document.getElementById('labelBtn').classList.remove('active');
+        document.getElementById('coordBtn').classList.remove('active');
+        
+        panel.style.display = 'block';
+        btn.classList.add('active');
+      }
+    }
+
+    function toggleDrawing() {
+      const panel = document.getElementById('drawingPanel');
+      const btn = document.getElementById('drawBtn');
+      
+      if (panel.style.display === 'block') {
+        panel.style.display = 'none';
+        btn.classList.remove('active');
+      } else {
+        // مخفی کردن پنل‌های دیگر
+        document.getElementById('measurementPanel').style.display = 'none';
+        document.getElementById('labelPanel').style.display = 'none';
+        document.getElementById('coordinatePanel').style.display = 'none';
+        document.getElementById('measureBtn').classList.remove('active');
+        document.getElementById('labelBtn').classList.remove('active');
+        document.getElementById('coordBtn').classList.remove('active');
+        
+        panel.style.display = 'block';
+        btn.classList.add('active');
+      }
+    }
+
+    function toggleLabel() {
+      const panel = document.getElementById('labelPanel');
+      const btn = document.getElementById('labelBtn');
+      
+      if (panel.style.display === 'block') {
+        panel.style.display = 'none';
+        btn.classList.remove('active');
+      } else {
+        // مخفی کردن پنل‌های دیگر
+        document.getElementById('measurementPanel').style.display = 'none';
+        document.getElementById('drawingPanel').style.display = 'none';
+        document.getElementById('coordinatePanel').style.display = 'none';
+        document.getElementById('measureBtn').classList.remove('active');
+        document.getElementById('drawBtn').classList.remove('active');
+        document.getElementById('coordBtn').classList.remove('active');
+        
+        panel.style.display = 'block';
+        btn.classList.add('active');
+      }
+    }
+
+    function toggleCoordinate() {
+      const panel = document.getElementById('coordinatePanel');
+      const btn = document.getElementById('coordBtn');
+      
+      if (panel.style.display === 'block') {
+        panel.style.display = 'none';
+        btn.classList.remove('active');
+      } else {
+        // مخفی کردن پنل‌های دیگر
+        document.getElementById('measurementPanel').style.display = 'none';
+        document.getElementById('drawingPanel').style.display = 'none';
+        document.getElementById('labelPanel').style.display = 'none';
+        document.getElementById('measureBtn').classList.remove('active');
+        document.getElementById('drawBtn').classList.remove('active');
+        document.getElementById('labelBtn').classList.remove('active');
+        
+        panel.style.display = 'block';
+        btn.classList.add('active');
+      }
+    }
+
+    function startLengthMeasurement() {
+      new L.Draw.Polyline(map, L.Draw.Polyline.prototype.options).enable();
+      document.getElementById('statusMsg').innerText = 'حالت اندازه‌گیری طول فعال شد. خطی ترسیم کنید.';
+    }
+
+    function startAreaMeasurement() {
+      new L.Draw.Polygon(map, L.Draw.Polygon.prototype.options).enable();
+      document.getElementById('statusMsg').innerText = 'حالت اندازه‌گیری مساحت فعال شد. چندضلعی ترسیم کنید.';
+    }
+
+    function clearMeasurements() {
+      measureItems.clearLayers();
+      document.getElementById('measurementResult').style.display = 'none';
+      document.getElementById('statusMsg').innerText = 'اندازه‌گیری‌ها پاک شدند.';
+    }
+
+    function startDrawing(type) {
+      let drawTool;
+      
+      switch (type) {
+        case 'marker':
+          drawTool = new L.Draw.Marker(map);
+          break;
+        case 'polyline':
+          drawTool = new L.Draw.Polyline(map);
+          break;
+        case 'polygon':
+          drawTool = new L.Draw.Polygon(map);
+          break;
+        case 'rectangle':
+          drawTool = new L.Draw.Rectangle(map);
+          break;
+        case 'circle':
+          drawTool = new L.Draw.Circle(map);
+          break;
+      }
+      
+      if (drawTool) {
+        drawTool.enable();
+        document.getElementById('statusMsg').innerText = `حالت ترسیم ${type} فعال شد.`;
+      }
+    }
+
+    function clearDrawings() {
+      drawnItems.clearLayers();
+      document.getElementById('statusMsg').innerText = 'ترسیم‌ها پاک شدند.';
+    }
+
+    function convertCoordinates() {
+      const lat = document.getElementById('latInput').value;
+      const lon = document.getElementById('lonInput').value;
+      
+      if (!lat || !lon) {
+        alert('لطفاً هر دو فیلد عرض و طول جغرافیایی را پر کنید.');
+        return;
+      }
+      
+      try {
+        const utm = convertToUTM(lat, lon);
+        const result = document.getElementById('utmResult');
+        result.innerHTML = `
+          <strong>مختصات UTM:</strong><br>
+          Easting: ${utm.easting}<br>
+          Northing: ${utm.northing}<br>
+          Zone: ${utm.zone}
+        `;
+        result.style.display = 'block';
+        document.getElementById('statusMsg').innerText = 'تبدیل مختصات با موفقیت انجام شد.';
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    function resetView() {
+      if (geoLayer) {
+        try {
+          map.fitBounds(geoLayer.getBounds(), {padding:[20,20]});
+        } catch (e) {
+          map.setView(KHORRAMABAD, 12);
+        }
+      } else {
+        map.setView(KHORRAMABAD, 12);
+      }
+      document.getElementById('statusMsg').innerText = 'نمای نقشه بازنشانی شد.';
+    }
+
+    // ====== مدیریت نمایش تمام صفحه ======
+    function setupFullscreen() {
+      const fullscreenBtn = document.getElementById('fullscreenBtn');
+      
+      fullscreenBtn.addEventListener('click', toggleFullscreen);
+      
+      document.addEventListener('fullscreenchange', handleFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    }
+    
+    function toggleFullscreen() {
+      if (!isFullscreen) {
+        enterFullscreen();
+      } else {
+        exitFullscreen();
+      }
+    }
+    
+    function enterFullscreen() {
+      const element = document.documentElement;
+      
+      if (element.requestFullscreen) {
+        element.requestFullscreen();
+      } else if (element.webkitRequestFullscreen) {
+        element.webkitRequestFullscreen();
+      } else if (element.mozRequestFullScreen) {
+        element.mozRequestFullScreen();
+      } else if (element.msRequestFullscreen) {
+        element.msRequestFullscreen();
+      }
+      
+      document.body.classList.add('fullscreen');
+      isFullscreen = true;
+      updateFullscreenButton();
+      
+      setTimeout(() => {
+        map.invalidateSize();
+        if (geoLayer) {
+          try {
+            map.fitBounds(geoLayer.getBounds(), {padding:[20,20]});
+          } catch (e) {}
+        }
+      }, 300);
+    }
+    
+    function exitFullscreen() {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+      
+      document.body.classList.remove('fullscreen');
+      isFullscreen = false;
+      updateFullscreenButton();
+      
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 300);
+    }
+    
+    function handleFullscreenChange() {
+      isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || 
+                        document.mozFullScreenElement || document.msFullscreenElement);
+      
+      if (!isFullscreen) {
+        document.body.classList.remove('fullscreen');
+      }
+      
+      updateFullscreenButton();
+      
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 300);
+    }
+    
+    function updateFullscreenButton() {
+      const icon = document.querySelector('#fullscreenBtn i');
+      const text = document.querySelector('#fullscreenBtn span');
+      
+      if (isFullscreen) {
+        icon.className = 'fas fa-compress';
+        text.textContent = 'خروج از تمام صفحه';
+      } else {
+        icon.className = 'fas fa-expand';
+        text.textContent = 'تمام صفحه';
+      }
+    }
+
+    function switchBase(name) {
+      const layer = baseLayers[name];
+      if (!layer) return;
+      Object.values(baseLayers).forEach(l => map.removeLayer(l));
+      layer.addTo(map);
+      document.getElementById('statusMsg').innerText = `لایه پایه تغییر کرد: ${name}`;
+    }
+
+    function showLoading() { 
+      document.getElementById('loadingOverlay').style.display = 'flex'; 
+    }
+    
+    function hideLoading() { 
+      document.getElementById('loadingOverlay').style.display = 'none'; 
+    }
+
+    // ====== پردازش فایل shapefile ======
+    async function processShapefile() {
+      const fileInput = document.getElementById('fileInput');
+      if (!fileInput || fileInput.files.length === 0) {
+        alert('لطفاً ابتدا فایل‌های shapefile (ZIP) یا فایل‌های SHP/SHX/DBF را انتخاب کنید.');
+        return;
+      }
+
+      showLoading();
+      document.getElementById('statusMsg').innerText = 'در حال خواندن فایل با پشتیبانی UTF-8...';
+
+      try {
+        let geojson;
+        if (fileInput.files.length === 1 && fileInput.files[0].name.toLowerCase().endsWith('.zip')) {
+          const arrayBuffer = await fileInput.files[0].arrayBuffer();
+          geojson = await shp(arrayBuffer);
+        } else {
+          const zip = new JSZip();
+          for (let f of fileInput.files) {
+            const content = await f.arrayBuffer();
+            zip.file(f.name, content);
+          }
+          const contentArrayBuffer = await zip.generateAsync({ type: "arraybuffer" });
+          geojson = await shp(contentArrayBuffer);
+        }
+        
+        // اصلاح encoding برای نمایش صحیح فارسی با UTF-8
+        geojson = fixUTF8Encoding(geojson);
+        onGeoJSONLoaded(geojson);
+        document.getElementById('statusMsg').innerText = 'پردازش با موفقیت انجام شد. (UTF-8)';
+      } catch (err) {
+        console.error(err);
+        alert('خطا در پردازش فایل: ' + (err.message || err));
+        document.getElementById('statusMsg').innerText = 'خطا در پردازش فایل.';
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // ====== اصلاح encoding UTF-8 ======
+    function fixUTF8Encoding(geojson) {
+      if (!geojson.features) return geojson;
+      
+      const fixedGeoJSON = JSON.parse(JSON.stringify(geojson));
+      
+      fixedGeoJSON.features.forEach(feature => {
+        if (feature.properties) {
+          Object.keys(feature.properties).forEach(key => {
+            let value = feature.properties[key];
+            if (typeof value === 'string') {
+              // اصلاح encoding با UTF-8
+              value = decodeUTF8Text(value);
+              feature.properties[key] = value;
+            }
+          });
+        }
+      });
+      
+      return fixedGeoJSON;
+    }
+
+    function onGeoJSONLoaded(geojson) {
+      let finalGeoJSON = null;
+      if (geojson.type === 'FeatureCollection') {
+        finalGeoJSON = geojson;
+      } else if (geojson.features) {
+        finalGeoJSON = geojson;
+      } else {
+        const features = [];
+        for (const k of Object.keys(geojson)) {
+          const val = geojson[k];
+          if (val && val.type === 'FeatureCollection' && val.features) features.push(...val.features);
+        }
+        finalGeoJSON = { type: 'FeatureCollection', features };
+      }
+
+      if (!finalGeoJSON || !finalGeoJSON.features || finalGeoJSON.features.length === 0) {
+        alert('داده‌ای یافت نشد یا فرمت پشتیبانی نمی‌شود.');
+        return;
+      }
+
+      lastGeoJSON = JSON.parse(JSON.stringify(finalGeoJSON));
+      showDataOnMap(lastGeoJSON);
+      showAttributes(lastGeoJSON);
+      populateLabelFields(lastGeoJSON); // پر کردن لیست فیلدها برای لیبل‌گذاری
+    }
+
+    function showDataOnMap(geojson) {
+      if (geoLayer) map.removeLayer(geoLayer);
+
+      geoLayer = L.geoJSON(geojson, {
+        pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
+          radius: 6,
+          fillColor: '#f59e0b',
+          color: '#071028',
+          weight: 2,
+          fillOpacity: 0.9
+        }),
+        style: (feat) => ({
+          color: '#2563eb',
+          weight: 2,
+          opacity: 0.9,
+          fillOpacity: 0.4
+        }),
+        onEachFeature: (feature, layer) => {
+          if (feature.properties) {
+            let props = Object.entries(feature.properties)
+              .map(([k,v]) => {
+                const displayValue = typeof v === 'string' ? decodeUTF8Text(v) : v;
+                return `<tr><td style="font-weight:700;" class="persian-text utf8-text">${escapeHtml(k)}</td><td class="persian-text utf8-text">${escapeHtml(String(displayValue))}</td></tr>`;
+              }).join('');
+            layer.bindPopup(`<div style="max-height:220px; overflow:auto; direction: rtl;" class="utf8-text"><table>${props}</table></div>`);
+          }
+        }
+      }).addTo(map);
+
+      try {
+        map.fitBounds(geoLayer.getBounds(), {padding:[20,20]});
+      } catch (e) {
+        map.setView(KHORRAMABAD, 12);
+      }
+    }
+
+    function showAttributes(geojson) {
+      const container = document.getElementById('attributes');
+      container.innerHTML = '';
+      
+      if (!geojson.features || geojson.features.length === 0) {
+        container.innerHTML = '<p>هیچ داده‌ای یافت نشد.</p>'; 
+        return;
+      }
+
+      const keys = Object.keys(geojson.features[0].properties || {});
+      
+      if (keys.length === 0) {
+        container.innerHTML = '<p>ویژگی‌ (Attribute) یافت نشد.</p>'; 
+        return;
+      }
+
+      let html = `
+        <div style="margin-bottom: 10px; color: #94a3b8; font-size: 0.9rem;">
+          <i class="fas fa-info-circle"></i> تعداد رکوردها: ${geojson.features.length} | تعداد فیلدها: ${keys.length}
+        </div>
+        <div style="overflow:auto;">
+          <table class="utf8-text">
+            <thead>
+              <tr>${keys.map(k => `<th class="persian-text utf8-text">${escapeHtml(decodeUTF8Text(k))}</th>`).join('')}</tr>
+            </thead>
+            <tbody>
+      `;
+      
+      geojson.features.slice(0,500).forEach(f => {
+        html += '<tr>' + keys.map(k => {
+          const value = f.properties[k];
+          const displayValue = typeof value === 'string' ? decodeUTF8Text(value) : value;
+          return `<td class="persian-text utf8-text">${escapeHtml(String(displayValue ?? ""))}</td>`;
+        }).join('') + '</tr>';
+      });
+      
+      html += '</tbody></table></div>';
+      
+      if (geojson.features.length > 500) {
+        html += `<div style="margin-top: 10px; color: #f59e0b; font-size: 0.9rem;">
+          <i class="fas fa-exclamation-triangle"></i> فقط 500 رکورد اول نمایش داده شد. (از ${geojson.features.length} رکورد)
+        </div>`;
+      }
+      
+      container.innerHTML = html;
+    }
+
+    function clearMap() {
+      if (geoLayer) {
+        map.removeLayer(geoLayer);
+        geoLayer = null;
+      }
+      lastGeoJSON = null;
+      clearLabels();
+      document.getElementById('attributes').innerHTML = 'هیچ داده‌ای نمایش داده نمی‌شود. لطفاً یک فایل Shapefile بارگذاری کنید.';
+      document.getElementById('statusMsg').innerText = 'نقشه پاک شد.';
+      document.getElementById('fileInfo').style.display = 'none';
+      document.getElementById('fileInput').value = '';
+      document.getElementById('labelFieldSelect').innerHTML = '<option value="">-- انتخاب فیلد --</option>';
+    }
+
+    function exportShapefile() {
+      if (!lastGeoJSON) {
+        alert('هیچ داده‌ای برای خروجی‌گیری موجود نیست. ابتدا فایل را پردازش کنید.');
+        return;
+      }
+
+      const toExport = JSON.parse(JSON.stringify(lastGeoJSON));
+      toExport.features.forEach(f => {
+        if (!f.properties) f.properties = {};
+        f.properties._designer = 'اکبر فتحی‌پور';
+        f.properties._export_date = new Date().toISOString().split('T')[0];
+      });
+
+      document.getElementById('statusMsg').innerText = 'درحال آماده‌سازی خروجی...';
+      showLoading();
+
+      try {
+        const zipContent = shpwrite.zip(toExport);
+
+        let blobPromise;
+
+        if (zipContent instanceof Blob) {
+          blobPromise = Promise.resolve(zipContent);
+        } else if (zipContent instanceof Uint8Array || zipContent instanceof ArrayBuffer) {
+          const arr = zipContent instanceof ArrayBuffer ? new Uint8Array(zipContent) : zipContent;
+          blobPromise = Promise.resolve(new Blob([arr], {type: 'application/zip'}));
+        } else if (zipContent && typeof zipContent.generateAsync === 'function') {
+          blobPromise = zipContent.generateAsync({type:'blob'});
+        } else {
+          const data = typeof zipContent === 'string' ? zipContent : JSON.stringify(zipContent);
+          blobPromise = Promise.resolve(new Blob([data], {type:'application/zip'}));
+        }
+
+        blobPromise.then(blob => {
+          const now = new Date();
+          const stamp = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}`;
+          const filename = `export_shapefile_${stamp}.zip`;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          document.getElementById('statusMsg').innerText = `خروجی آماده شد: ${filename}`;
+        }).catch(e => {
+          console.error(e);
+          alert('خطا در تولید فایل ZIP خروجی: ' + e);
+          document.getElementById('statusMsg').innerText = 'خطا در تولید خروجی.';
+        }).finally(() => hideLoading());
+
+      } catch (err) {
+        console.error(err);
+        hideLoading();
+        alert('خطا در تولید خروجی shapefile: ' + (err.message||err));
+        document.getElementById('statusMsg').innerText = 'خطا در تولید خروجی.';
+      }
+    }
+
+    function exportDrawing() {
+      if (drawnItems.getLayers().length === 0) {
+        alert('هیچ ترسیمی برای ذخیره‌سازی موجود نیست.');
+        return;
+      }
+
+      document.getElementById('statusMsg').innerText = 'درحال آماده‌سازی ترسیم‌ها...';
+      showLoading();
+
+      try {
+        const geojson = drawnItems.toGeoJSON();
+        
+        // اضافه کردن ویژگی‌های پیشفرض
+        geojson.features.forEach((feature, index) => {
+          if (!feature.properties) feature.properties = {};
+          feature.properties.id = index + 1;
+          feature.properties.type = feature.geometry.type;
+          feature.properties._designer = 'اکبر فتحی‌پور';
+          feature.properties._created = new Date().toISOString();
+        });
+
+        const zipContent = shpwrite.zip(geojson);
+
+        let blobPromise;
+
+        if (zipContent instanceof Blob) {
+          blobPromise = Promise.resolve(zipContent);
+        } else if (zipContent instanceof Uint8Array || zipContent instanceof ArrayBuffer) {
+          const arr = zipContent instanceof ArrayBuffer ? new Uint8Array(zipContent) : zipContent;
+          blobPromise = Promise.resolve(new Blob([arr], {type: 'application/zip'}));
+        } else if (zipContent && typeof zipContent.generateAsync === 'function') {
+          blobPromise = zipContent.generateAsync({type:'blob'});
+        } else {
+          const data = typeof zipContent === 'string' ? zipContent : JSON.stringify(zipContent);
+          blobPromise = Promise.resolve(new Blob([data], {type:'application/zip'}));
+        }
+
+        blobPromise.then(blob => {
+          const now = new Date();
+          const stamp = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}`;
+          const filename = `drawings_${stamp}.zip`;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          document.getElementById('statusMsg').innerText = `ترسیم‌ها ذخیره شد: ${filename}`;
+        }).catch(e => {
+          console.error(e);
+          alert('خطا در ذخیره‌سازی ترسیم‌ها: ' + e);
+          document.getElementById('statusMsg').innerText = 'خطا در ذخیره‌سازی.';
+        }).finally(() => hideLoading());
+
+      } catch (err) {
+        console.error(err);
+        hideLoading();
+        alert('خطا در تولید فایل ترسیم‌ها: ' + (err.message||err));
+        document.getElementById('statusMsg').innerText = 'خطا در ذخیره‌سازی.';
+      }
+    }
+
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      return String(text)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
+    }
+
+    // مقداردهی اولیه
+    window.onload = initMap;
+  </script>
+</body>
+</html>
